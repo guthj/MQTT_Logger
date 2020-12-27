@@ -6,12 +6,12 @@ Created on Fri Oct 16 16:41:54 2020
 @author: janguth
 """
 
-from apscheduler.schedulers.background import BackgroundScheduler
-import paho.mqtt.client as mqtt
-
-import csv
 import os
+from datetime import datetime
 from time import sleep
+
+import paho.mqtt.client as mqtt
+# from apscheduler.schedulers.background import BackgroundScheduler
 
 debuglevel = 5
 debugStr = ["None  :  ", "Error :  ", "Notice:  ", "Info  :  ", "Debug :  "]
@@ -59,12 +59,14 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     messageText = str(msg.payload, 'utf-8')
     print(msg.topic + " " + str(msg.payload))
-    log(msg.topic + " " + messageText, 4)
+    log(msg.topic + " -> " + messageText, 4)
     # CHECK FOR PLANT SPECIFIC MESSAGES
     for i in range(len(plants)):
         if msg.topic == plants[i] + "/Log":
             plantLog[i].pop(0)
-            plantLog[i].append(messageText)
+            dateTimeObj = datetime.now()
+            timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S)")
+            plantLog[i].append(timestampStr + " " + messageText + "\n")
 
         if msg.topic == plants[i] + "/Ping/Response":
             plantResponses[i] = True
@@ -74,14 +76,15 @@ def on_message(client, userdata, msg):
 
 def saveLogs():
     for i in range(len(plants)):
-        try:
-            with open(pathSave + plants[i] + ".csv", 'w') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                for row in plantLog[i]:
-                    csvwriter.writerow(row)
-                log("values saved for " + plants[i], 2)
-        except:
-            log("Couldn't save values for " + plants[i], 1)
+        if plantLog[i][plantLogLenght-1] != "":
+            try:
+                with open(pathSave + plants[i] + ".txt", 'w') as txtfile:
+                    txtfile.writelines(plantLog[i])
+
+            except:
+                log("Couldn't save values for " + plants[i], 1)
+        else:
+            log("No new logs for for " + plants[i], 1)
 
 
 def pingEveryone():
@@ -138,6 +141,7 @@ if __name__ == "__main__":
 
 
     except KeyboardInterrupt:
+        saveLogs()
         print("Exiting program")
 
 
