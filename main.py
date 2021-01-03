@@ -91,6 +91,8 @@ def pingEveryone():
 
 
 def sendAlarms():
+    # Save logs 1x/d
+    saveLogs()
     if var.plantsUnresponsive:
         for plant in var.unresponsivePlants:
             client.publish(var.plants[plant] + "/Alarm", "true")
