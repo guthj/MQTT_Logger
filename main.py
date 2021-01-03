@@ -14,7 +14,7 @@ import paho.mqtt.client as mqtt
 from apscheduler.schedulers.background import BackgroundScheduler
 import var
 
-#os.chdir(os.path.dirname(__file__))
+os.chdir(os.path.dirname(__file__))
 
 pathSave = ""
 
