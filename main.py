@@ -11,32 +11,22 @@ from datetime import datetime
 from time import sleep
 
 import paho.mqtt.client as mqtt
-# from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+import var
 
-debuglevel = 5
-debugStr = ["None  :  ", "Error :  ", "Notice:  ", "Info  :  ", "Debug :  "]
-
-plants = ["AlocasiaZ", "CalathiaM", "Avocado"]
-
-plantResponses = []
-unresponsivePlants = []
-plantsUnresponsive = False
-os.chdir(os.path.dirname(__file__))
+#os.chdir(os.path.dirname(__file__))
 
 pathSave = ""
 
-for plant in plants:
-    plantResponses.append(True)
+for plant in var.plants:
+    var.plantResponses.append(True)
 
-plantLog = []
 
-plantLogLenght = 50
-
-for i in range(len(plants)):
+for i in range(len(var.plants)):
     plantLogging = []
-    for a in range(plantLogLenght):
+    for a in range(var.plantLogLenght):
         plantLogging.append("")
-    plantLog.append(plantLogging)
+    var.plantLog.append(plantLogging)
 
 
 def on_connect(client, userdata, flags, rc):
@@ -50,7 +40,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    for plant in plants:
+    for plant in var.plants:
         client.subscribe(plant + "/Ping/Response")
         client.subscribe(plant + "/Log")
     client.subscribe("Logger/Save")
@@ -61,57 +51,57 @@ def on_message(client, userdata, msg):
     print(msg.topic + " " + str(msg.payload))
     log(msg.topic + " -> " + messageText, 4)
     # CHECK FOR PLANT SPECIFIC MESSAGES
-    for i in range(len(plants)):
-        if msg.topic == plants[i] + "/Log":
-            plantLog[i].pop(0)
+    for i in range(len(var.plants)):
+        if msg.topic == var.plants[i] + "/Log":
+            var.plantLog[i].pop(0)
             dateTimeObj = datetime.now()
             timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S)")
-            plantLog[i].append(timestampStr + " " + messageText + "\n")
+            var.plantLog[i].append(timestampStr + " " + messageText + "\n")
 
-        if msg.topic == plants[i] + "/Ping/Response":
-            plantResponses[i] = True
+        if msg.topic == var.plants[i] + "/Ping/Response":
+            var.plantResponses[i] = True
     if msg.topic == "Logger/Save":
         saveLogs()
 
 
 def saveLogs():
-    for i in range(len(plants)):
-        if plantLog[i][plantLogLenght-1] != "":
+    for i in range(len(var.plants)):
+        if var.plantLog[i][var.plantLogLenght-1] != "":
             try:
-                with open(pathSave + plants[i] + ".txt", 'w') as txtfile:
-                    txtfile.writelines(plantLog[i])
+                with open(pathSave + var.plants[i] + ".txt", 'w') as txtfile:
+                    txtfile.writelines(var.plantLog[i])
 
             except:
-                log("Couldn't save values for " + plants[i], 1)
+                log("Couldn't save values for " + var.plants[i], 1)
         else:
-            log("No new logs for for " + plants[i], 1)
+            log("No new logs for for " + var.plants[i], 1)
 
 
 def pingEveryone():
-    unresponsivePlants = []
-    plantsUnresponsive = False
-    for i in range(len(plants)):
-        if (plantResponses[i] == False):
-            unresponsivePlants.append(i)
-            plantsUnresponsive = True
-        plantResponses[i] = False
+    var.unresponsivePlants = []
+    var.plantsUnresponsive = False
+    for i in range(len(var.plants)):
+        if (var.plantResponses[i] == False):
+            var.unresponsivePlants.append(i)
+            var.plantsUnresponsive = True
+        var.plantResponses[i] = False
 
-    for plant in plants:
+    for plant in var.plants:
         client.publish(plant + "/Ping/Send", "Ping")
 
 
 def sendAlarms():
-    if plantsUnresponsive:
-        for plant in unresponsivePlants:
-            client.publish(plants[plant] + "/Alarm", "true")
+    if var.plantsUnresponsive:
+        for plant in var.unresponsivePlants:
+            client.publish(var.plants[plant] + "/Alarm", "true")
             sleep(3)
-            client.publish(plants[plant] + "/Alarm", "false")
+            client.publish(var.plants[plant] + "/Alarm", "false")
 
 
 def log(text, level):
-    if level <= debuglevel:
-        print(debugStr[level] + text)
-        client.publish("Logger/Log", debugStr[level] + text)
+    if level <= var.debuglevel:
+        print(var.debugStr[level] + text)
+        client.publish("Logger/Log", var.debugStr[level] + text)
 
 
 if __name__ == "__main__":
