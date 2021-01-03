@@ -2,7 +2,7 @@ plantsUnresponsive = False
 
 plantResponses = []
 unresponsivePlants = []
-plants = ["AlocasiaZ", "CalathiaM", "Avocado", "Monstera"]
+plants = ["pyPlant", "AlocasiaZ", "CalathiaM", "Avocado", "Monstera"]
 
 
 plantLog = []
